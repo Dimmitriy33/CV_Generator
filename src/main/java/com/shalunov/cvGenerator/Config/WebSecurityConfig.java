@@ -1,5 +1,8 @@
-package com.shalunov.cvGenerator.application.WebSecurity;
+package com.shalunov.cvGenerator.Config;
 
+import com.shalunov.cvGenerator.application.WebSecurity.JwtAuthEntryPoint;
+import com.shalunov.cvGenerator.application.WebSecurity.JwtAuthTokenFilter;
+import com.shalunov.cvGenerator.application.WebSecurity.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,8 +56,28 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable().
                 authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers(
+                        "/",
+                        "/",
+                        "/*.html",
+                        "/favicon.ico",
+                        "/**/*.html",
+                        "/**/*.css",
+                        "/**/*.js",
+                        "/**",
+                        "/error"
+                ).permitAll()
+                .antMatchers(
+                        "/api/auth/**"
+                ).permitAll()
                 .anyRequest().authenticated()
+                .and()
+                .formLogin()
+                .loginPage("/api/auth/signin")
+                .permitAll()
+                .and()
+                .logout()
+                .permitAll()
                 .and()
                 .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
