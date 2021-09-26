@@ -1,0 +1,26 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Welcome</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/home.css}"/>
+</head>
+<body>
+<h1>Welcome to the CV Generator</h1>
+<h2>Create beautiful, professional resumes in minutes, free</h2>
+<div class="authContainer">
+    <div>
+        <h3>
+            <a th:href="@{/api/auth/signin}">Sing In</a>
+        </h3>
+    </div>
+    <div>
+        <h3>
+            <a th:href="@{/api/auth/signup}">Sing Up</a>
+        </h3>
+    </div>
+</div>
+<script src="webjars/jquery/3.3.1/jquery.min.js"></script>
+<script src="webjars/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>
