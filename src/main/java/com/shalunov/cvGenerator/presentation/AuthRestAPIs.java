@@ -14,6 +14,7 @@ import com.shalunov.cvGenerator.domain.User;
 import com.shalunov.cvGenerator.domain.enums.RolesEnum;
 import com.shalunov.cvGenerator.infrastructure.repositories.RoleRepository;
 import com.shalunov.cvGenerator.infrastructure.repositories.UserRepository;
+import org.apache.commons.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +23,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -47,13 +48,22 @@ public class AuthRestAPIs {
     @Autowired
     JwtProvider jwtProvider;
 
+    @GetMapping(value = {"/signin",})
+    public ModelAndView authenticateUserView(Model model) {
+        ModelAndView modelAndView = new ModelAndView();
+        LoginForm loginForm = new LoginForm();
+        model.addAttribute("loginForm", loginForm);
+        modelAndView.setViewName("login");
+        return modelAndView;
+    }
+
     @PostMapping("/signin")
-    public ResponseEntity authenticateUser(@Valid @RequestBody LoginForm loginRequest) {
+    public ResponseEntity authenticateUser(@Valid @RequestBody LoginForm loginForm) {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
+                        loginForm.getUsername(),
+                        loginForm.getPassword()
                 )
         );
 
@@ -63,24 +73,36 @@ public class AuthRestAPIs {
         return ResponseEntity.ok(new JwtResponse(jwt));
     }
 
+    @GetMapping(value = {"/signup",})
+    public ModelAndView registerUserView(Model model) {
+        ModelAndView modelAndView = new ModelAndView();
+        SignUpForm signUpForm = new SignUpForm();
+        model.addAttribute("signUpForm", signUpForm);
+        modelAndView.setViewName("registration");
+        return modelAndView;
+    }
+
     @PostMapping("/signup")
-    public ResponseEntity registerUser(@Valid @RequestBody SignUpForm signUpRequest) {
+    public RedirectView  registerUser(@Valid SignUpForm signUpRequest, RedirectAttributes redirectAttrs) {
+        ModelAndView modelAndView = new ModelAndView();
         if(userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return new ResponseEntity("Fail -> Username is already taken!",
-                    HttpStatus.BAD_REQUEST);
+            redirectAttrs.addAttribute("errorMessage", "Username is already taken!");
+            return new RedirectView("error");
         }
 
         if(userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return new ResponseEntity("Fail -> Email is already in use!",
-                    HttpStatus.BAD_REQUEST);
+            redirectAttrs.addAttribute("errorMessage", "Email is already in use!");
+            return new RedirectView("error");
         }
-
         // Creating user's account
         User user = new User(signUpRequest.getName(), signUpRequest.getUsername(),
                 signUpRequest.getEmail(), encoder.encode(signUpRequest.getPassword()));
 
         Set strRoles = signUpRequest.getRole();
         Set roles = new HashSet<>();
+        if(strRoles == null) {
+            strRoles = new HashSet<>();
+        }
 
         strRoles.forEach(role -> {
             if ("admin".equals(role)) {
@@ -101,6 +123,14 @@ public class AuthRestAPIs {
         user.setRoles(roles);
         userRepository.save(user);
 
-        return ResponseEntity.ok().body("User registered successfully!");
+        return new RedirectView("redirect");
+    }
+
+
+    @GetMapping(value = {"/api/auth/redirect",})
+    public ModelAndView refirectToLoginView(Model model) {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("registerSuccessful");
+        return modelAndView;
     }
 }
